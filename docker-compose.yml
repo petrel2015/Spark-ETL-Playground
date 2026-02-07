@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  master:
+    platform: linux/amd64
+    image: apache/hadoop:3.3.6
+    container_name: master
+    hostname: master
+    user: root
+    entrypoint: [""]
+    ports:
+      - "0.0.0.0:9870:9870"
+      - "0.0.0.0:8088:8088"
+      - "0.0.0.0:9000:9000"
+    volumes:
+      - master_data:/tmp/hadoop-root/dfs/name
+      - ./workspace:/opt/hadoop/workspace
+    networks:
+      - spark_net
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:9870 || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    command: /bin/bash /opt/hadoop/workspace/start-master.sh
+
+  worker:
+    platform: linux/amd64
+    image: apache/hadoop:3.3.6
+    hostname: worker
+    user: root
+    entrypoint: [""]
+    depends_on:
+      - master
+    ports:
+      - "8042-8045:8042" # 允许 3-4 个 worker 自动占用宿主机的 8042, 8043, 8044 等端口
+    volumes:
+      - ./workspace:/opt/hadoop/workspace
+    networks:
+      - spark_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8042 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    command: /bin/bash /opt/hadoop/workspace/start-worker.sh
+
+  spark:
+    image: apache/spark:3.5.8
+    container_name: spark
+    hostname: spark
+    user: root
+    entrypoint: [""]
+    depends_on:
+      master:
+        condition: service_healthy # 等 Master 变绿（WebUI 通了）
+      worker:
+        condition: service_healthy # 等 Worker 变绿（NM 通了）
+    ports:
+      - "0.0.0.0:18080:18080"
+    volumes:
+      - ./workspace:/opt/spark/work-dir/workspace
+    networks:
+      - spark_net
+    command: /bin/bash /opt/spark/work-dir/workspace/start-spark.sh
+
+volumes:
+  master_data:
+
+networks:
+  spark_net:
+    driver: bridge

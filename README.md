@@ -1,1 +1,78 @@
-# Spark-ETL-Playground
+# Spark ETL 性能分析训练场 (NYC Taxi Edition)
+
+本项目是一个专门用于学习 **Spark SQL ETL 开发**及 **Spark UI 性能调优**的实验环境。通过在真实场景中构造“坏代码”，复现并分析数据倾斜、数据膨胀、复杂 Shuffle 等常见的生产瓶颈。
+
+## 🚀 技术栈
+*   **Spark:** 3.5.8
+*   **Scala:** 2.12.18
+*   **Hadoop:** 3.3.6 (YARN Mode)
+*   **Dataset:** NYC Yellow Taxi Trip Records & Zone Lookup
+
+---
+
+## 🛠️ 快速开始
+
+### 1. 编译打包与启动
+你可以选择分步执行，或者使用预设的 Maven Profile 一键完成编译、拷贝 Jar 包及重启 Docker 环境。
+
+**一键完成（推荐）:**
+```bash
+mvn clean package -DskipTests -Prun
+```
+
+**分步执行:**
+```bash
+# 仅编译打包 (自动拷贝 Jar 到 workspace)
+mvn clean package -DskipTests
+
+# 手动启动环境
+docker-compose down -v && docker-compose up -d
+```
+
+### 3. 查看运行情况
+环境启动后，`master` 容器会自动将 `workspace/data` 下的数据上传至 HDFS，同时 `spark` 容器会自动触发 `spark-submit`。
+
+你可以通过查看容器日志来观察运行情况：
+```bash
+docker logs -f spark
+```
+
+---
+
+## 📊 监控与分析
+
+项目集成了 Spark UI 和 History Server，方便进行全方位的性能诊断。
+
+*   **Spark UI (运行中)**: [http://localhost:4040](http://localhost:4040)
+*   **YARN ResourceManager**: [http://localhost:8088](http://localhost:8088)
+*   **Spark History Server**: [http://localhost:18080](http://localhost:18080) *(任务完成后查看日志)*
+
+---
+
+## 🔍 Spark UI 学习重点
+
+### Scenario 1: 数据倾斜 (Data Skew)
+*   **现象**: 曼哈顿中心区域订单极多，导致关联时某些 Key 的 Task 运行缓慢。
+*   **UI 观察点**:
+    *   **Stage 详情**: 出现明显的“长尾”现象（Max Time 远大于 Median Time）。
+    *   **Shuffle Read Size**: 检查 Task 间的读取量是否存在数量级差异。
+
+### Scenario 2: 数据膨胀 (Data Explosion)
+*   **现象**: 按 `Borough` 进行 Self-Join，产生巨大的笛卡尔积。
+*   **UI 观察点**:
+    *   **Shuffle Write**: 观察 Stage 产生的海量磁盘写入。
+    *   **Spill**: 在内存不足时观察 **Spill (Memory)** 和 **Spill (Disk)** 的产生。
+
+### Scenario 3: 复杂 DAG (Multiple Stages)
+*   **现象**: 包含多级 Filter、Join、GroupBy、Window 操作。
+*   **UI 观察点**:
+    *   **DAG Visualization**: 理解宽依赖如何触发 Stage 划分。
+    *   **Event Timeline**: 观察各个 Stage 的并行执行程度。
+
+---
+
+## 💡 实验建议
+你可以尝试修改 `src/main/scala/com/example/spark/BadTaxiApp.scala` 中的配置并重新打包，观察 UI 变化：
+*   **优化 Join**: 启用/禁用 `spark.sql.autoBroadcastJoinThreshold`。
+*   **调整并行度**: 修改 `spark.sql.shuffle.partitions`（当前设为 10，观察改为 200 后的变化）。
+*   **内存管理**: 在 `workspace/start-spark.sh` 中调整 `--executor-memory`，观察对 Spill 的影响。
