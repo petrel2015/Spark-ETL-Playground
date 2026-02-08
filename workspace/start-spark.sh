@@ -65,7 +65,7 @@ echo ">>> [5/6] 正在后台提交 Spark 任务至 YARN..."
 --master yarn \
 --deploy-mode cluster \
 --num-executors 3 \
---executor-memory 768m \
+--executor-memory 1024m \
 /opt/spark/work-dir/workspace/sparkapp/spark-etl-playground-1.0-SNAPSHOT.jar &
 
 echo ">>> [6/6] ✅ 启动完成，正在追踪 History Server 日志..."
