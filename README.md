@@ -51,23 +51,23 @@ docker logs -f spark
 
 ## 🔍 Spark UI 学习重点
 
-### Scenario 1: 数据倾斜 (Data Skew)
-*   **现象**: 曼哈顿中心区域订单极多，导致关联时某些 Key 的 Task 运行缓慢。
+### Scenario 1: 数据膨胀与宽表 (Data Inflation & Wide Table)
+*   **现象**: 将原始数据翻 10 倍，并衍生 100 列宽表。
 *   **UI 观察点**:
-    *   **Stage 详情**: 出现明显的“长尾”现象（Max Time 远大于 Median Time）。
-    *   **Shuffle Read Size**: 检查 Task 间的读取量是否存在数量级差异。
+    *   **Input Size / Records**: 观察 Stage 1 的数据读取总量。
+    *   **Storage Tab**: 观察 `wideDF` 在序列化缓存后的内存与磁盘占用情况。
 
-### Scenario 2: 数据膨胀 (Data Explosion)
-*   **现象**: 按 `Borough` 进行 Self-Join，产生巨大的笛卡尔积。
+### Scenario 2: 剧烈 Shuffle 与数据倾斜 (Ultra Shuffle & Skew)
+*   **现象**: 在倾斜字段 `PULocationID` 上进行海量数据的 Self-Join。
 *   **UI 观察点**:
-    *   **Shuffle Write**: 观察 Stage 产生的海量磁盘写入。
-    *   **Spill**: 在内存不足时观察 **Spill (Memory)** 和 **Spill (Disk)** 的产生。
+    *   **Shuffle Write/Read**: 观察高达数 GB 甚至更多的 Shuffle 数据传输。
+    *   **Task Skew**: 观察特定 Task 处理数据量远超其他 Task 的现象。
 
-### Scenario 3: 复杂 DAG (Multiple Stages)
-*   **现象**: 包含多级 Filter、Join、GroupBy、Window 操作。
+### Scenario 3: 复杂 DAG 与 多级聚合 (Complex DAG & Multi-Agg)
+*   **现象**: 先写出 Parquet 再读回进行多维度聚合排序。
 *   **UI 观察点**:
-    *   **DAG Visualization**: 理解宽依赖如何触发 Stage 划分。
-    *   **Event Timeline**: 观察各个 Stage 的并行执行程度。
+    *   **DAG Visualization**: 查看完整的血缘关系和 Stage 划分。
+    *   **Job Grouping**: 在 UI 中通过自定义的 Job Group Name（如 `Step_5_Final_Agg`）快速定位逻辑。
 
 ---
 
