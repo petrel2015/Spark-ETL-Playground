@@ -14,7 +14,7 @@ services:
       - "0.0.0.0:9000:9000"
     volumes:
       - master_data:/tmp/hadoop-root/dfs/name
-      - ./workspace:/opt/hadoop/workspace
+      - ./workspace:/opt/workspace
     networks:
       - spark_net
     healthcheck:
@@ -23,7 +23,7 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
-    command: /bin/bash /opt/hadoop/workspace/start-master.sh
+    command: /bin/bash /opt/workspace/start-master.sh
 
   worker:
     platform: linux/amd64
@@ -34,9 +34,9 @@ services:
     depends_on:
       - master
     ports:
-      - "8042-8045:8042" # 允许 3-4 个 worker 自动占用宿主机的 8042, 8043, 8044 等端口
+      - "8042:8042"
     volumes:
-      - ./workspace:/opt/hadoop/workspace
+      - ./workspace:/opt/workspace
     networks:
       - spark_net
     healthcheck:
@@ -45,7 +45,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-    command: /bin/bash /opt/hadoop/workspace/start-worker.sh
+    command: /bin/bash /opt/workspace/start-worker.sh
 
   spark:
     image: apache/spark:3.5.8
@@ -61,10 +61,10 @@ services:
     ports:
       - "0.0.0.0:18080:18080"
     volumes:
-      - ./workspace:/opt/spark/work-dir/workspace
+      - ./workspace:/opt/workspace
     networks:
       - spark_net
-    command: /bin/bash /opt/spark/work-dir/workspace/start-spark.sh
+    command: /bin/bash /opt/workspace/start-spark.sh
 
 volumes:
   master_data:

@@ -69,11 +69,12 @@ done
 # --- 6. 初始化 HDFS 目录结构 ---
 echo ">>> [6/7] 配置 HDFS 基础目录 (Spark EventLog & Data)..."
 # 创建 Spark 历史日志目录
-/opt/hadoop/bin/hdfs --config $HADOOP_CONF_DIR dfs -mkdir -p /user/spark/eventlog
-/opt/hadoop/bin/hdfs --config $HADOOP_CONF_DIR dfs -chmod 1777 /user/spark/eventlog
+# /opt/hadoop/bin/hdfs --config $HADOOP_CONF_DIR dfs -mkdir -p /user/spark/eventlog
+# /opt/hadoop/bin/hdfs --config $HADOOP_CONF_DIR dfs -chmod 1777 /user/spark/eventlog
 
 # 上传测试数据至 HDFS
-/opt/hadoop/bin/hdfs --config $HADOOP_CONF_DIR dfs -put -f /opt/hadoop/workspace/data /user/
+/opt/hadoop/bin/hdfs --config $HADOOP_CONF_DIR dfs -mkdir /user
+/opt/hadoop/bin/hdfs --config $HADOOP_CONF_DIR dfs -put -f /opt/workspace/data /user/
 /opt/hadoop/bin/hdfs --config $HADOOP_CONF_DIR dfs -chmod -R 1777 /user/data
 
 # --- 7. 维持容器运行 ---

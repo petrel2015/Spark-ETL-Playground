@@ -40,8 +40,11 @@ export HADOOP_CONF_DIR=/etc/hadoop
 mkdir -p /opt/spark/conf
 cat > /opt/spark/conf/spark-defaults.conf <<EOF
 spark.eventLog.enabled             true
-spark.eventLog.dir                 hdfs://master:9000/user/spark/eventlog
-spark.history.fs.logDirectory      hdfs://master:9000/user/spark/eventlog
+spark.eventLog.rolling.enabled     true
+spark.eventLog.rolling.maxFileSize 128m
+spark.eventLog.compress            false
+spark.eventLog.dir                 file:///opt/workspace/eventlog
+spark.history.fs.logDirectory      file:///opt/workspace/eventlog
 spark.yarn.historyServer.address   http://spark:18080
 spark.history.ui.port              18080
 EOF
@@ -60,13 +63,17 @@ echo ">>> [4/6] 启动 Spark History Server..."
 
 # --- 6. 提交测试任务并维持容器运行 ---
 echo ">>> [5/6] 正在后台提交 Spark 任务至 YARN..."
+echo ">>> 等待60s（等待hdfs数据文件上传就绪）"
+sleep 60
+echo ">>> 开始提交"
 /opt/spark/bin/spark-submit \
---class com.example.spark.BadTaxiApp \
+--class com.example.spark.AnonymizedWebAnalyticsApp \
 --master yarn \
---deploy-mode cluster \
---num-executors 3 \
---executor-memory 1024m \
-/opt/spark/work-dir/workspace/sparkapp/spark-etl-playground-1.0-SNAPSHOT.jar &
+--deploy-mode client \
+--num-executors 4 \
+--executor-cores 1 \
+--executor-memory 512m \
+/opt/workspace/sparkapp/spark-etl-playground-1.1.0.jar &
 
 echo ">>> [6/6] ✅ 启动完成，正在追踪 History Server 日志..."
 # 等待日志生成

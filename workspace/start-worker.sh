@@ -34,7 +34,6 @@ cat > $HADOOP_CONF_DIR/yarn-site.xml <<EOF
     <property><name>yarn.resourcemanager.hostname</name><value>master</value></property>
     <property><name>yarn.nodemanager.vmem-check-enabled</name><value>false</value></property>
     <property><name>yarn.nodemanager.pmem-check-enabled</name><value>false</value></property>
-    <property><name>yarn.nodemanager.resource.memory-mb</name><value>8192</value></property>
     <property><name>yarn.log-aggregation-enable</name><value>true</value></property>
     <property><name>yarn.nodemanager.remote-app-log-dir</name><value>/tmp/logs</value></property>
 </configuration>
